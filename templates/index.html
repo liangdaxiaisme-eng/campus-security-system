@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>校园智能安全管理系统</title>
+    <style>
+        body { font-family: 'Microsoft YaHei', sans-serif; text-align: center; background-color: #f4f7f6; margin: 0; padding: 0; }
+        h1 { background-color: #2c3e50; color: white; padding: 25px; margin-top: 0; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        .container { max-width: 1100px; margin: 30px auto; background: white; padding: 40px; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        .upload-section { margin-bottom: 30px; padding: 20px; border: 2px dashed #bdc3c7; border-radius: 8px; background-color: #f9fbfc; }
+        .btn-group { margin-top: 15px; display: flex; justify-content: center; flex-wrap: wrap; gap: 10px;}
+        .upload-btn { background-color: #3498db; color: white; padding: 12px 20px; border: none; border-radius: 5px; cursor: pointer; font-size: 15px; font-weight: bold; transition: background-color 0.3s; }
+        .live-btn { background-color: #e74c3c; color: white; padding: 12px 20px; border: none; border-radius: 5px; cursor: pointer; font-size: 15px; font-weight: bold; transition: background-color 0.3s; }
+        .web-btn { background-color: #f39c12; color: white; padding: 12px 20px; border: none; border-radius: 5px; cursor: pointer; font-size: 15px; font-weight: bold; transition: background-color 0.3s; }
+        .upload-btn:hover { background-color: #2980b9; }
+        .live-btn:hover { background-color: #c0392b; }
+        .web-btn:hover { background-color: #d35400; }
+        .area-selection { margin: 20px 0; padding: 15px; background-color: #ecf0f1; border-radius: 8px; text-align: left; display: inline-block; }
+        .area-selection label { margin-right: 20px; font-size: 15px; color: #2c3e50; cursor: pointer; font-weight: bold; }
+        .area-selection input[type="checkbox"] { transform: scale(1.2); margin-right: 5px; }
+        .result-container { display: flex; justify-content: space-between; margin-top: 30px; text-align: left; }
+        .media-box { width: 68%; background-color: #fff; padding: 15px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); position: relative; }
+        .media-box img, .media-box video { width: 100%; border: 1px solid #ecf0f1; border-radius: 4px; background-color: #000; }
+        .live-badge { position: absolute; background: red; color: white; padding: 5px 10px; border-radius: 3px; font-size: 12px; font-weight: bold; margin: 10px; z-index: 10; animation: blink 2s infinite; }
+        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
+        .report-box { width: 28%; background-color: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border-left: 4px solid #3498db; }
+        .report-box h3 { margin-top: 0; color: #2c3e50; border-bottom: 2px solid #ecf0f1; padding-bottom: 10px; }
+        .report-item { background-color: #ecf0f1; margin-bottom: 10px; padding: 10px; border-radius: 5px; font-weight: bold; color: #34495e; }
+        .warning-item { background-color: #fadbd8; color: #c0392b; }
+        .footer { margin-top: 50px; color: #7f8c8d; font-size: 14px; margin-bottom: 30px; }
+    </style>
+</head>
+<body>
+    <h1>校园智能安全监控与异常行为检测系统</h1>
+    <div class="container">
+        <div class="upload-section">
+            <h2>安防媒体源实时上传与分析</h2>
+            <p style="color: #7f8c8d; margin-bottom: 10px;">请上传监控画面，或根据您的设备类型选择实时巡检模式</p>
+            <form id="mainForm" method="POST" enctype="multipart/form-data">
+                <div class="area-selection">
+                    <span style="margin-right: 15px; color: #7f8c8d;">📍 部署区域 (可多选):</span>
+                    <label><input type="checkbox" name="areas" value="lab" checked> 工程实验室/施工区</label>
+                    <label><input type="checkbox" name="areas" value="gate"> 校门进出口</label>
+                    <label><input type="checkbox" name="areas" value="public"> 操场/公共区域</label>
+                </div>
+                <br>
+                <input type="file" name="file" accept="image/*, video/*">
+                <div class="btn-group">
+                    <button type="submit" class="upload-btn" formaction="/detect">上传静态文件</button>
+                    <button type="submit" class="live-btn" formaction="/live_camera">调用服务器主机摄像头</button>
+                    <button type="submit" class="web-btn" formaction="/web_camera_ui">开启跨设备移动端监控</button>
+                </div>
+            </form>
+        </div>
+
+        {% if file_type %}
+        <div class="result-container">
+            <div class="media-box">
+                <h3 style="text-align: center; color: #34495e; margin-top: 0;">AI 视觉识别追踪画面</h3>
+                {% if file_type == 'image' %}
+                <img src="{{ url_for('static', filename='results/' + result_file) }}" alt="检测结果图">
+                {% elif file_type == 'video' %}
+                <video controls autoplay loop muted>
+                    <source src="{{ url_for('static', filename='results/' + result_file) }}" type="video/mp4">
+                </video>
+                {% endif %}
+            </div>
+            <div class="report-box">
+                <h3>智能安防检测报告</h3>
+                {% if detected_items|length > 0 %}
+                <p style="color: #7f8c8d; font-size: 14px;">发现 {{ detected_items|length }} 类目标：</p>
+                {% for item in detected_items %}
+                <div class="report-item {% if '违规' in item.type or '警报' in item.type %}warning-item{% endif %}">
+                    📌 {{ item.type }} <br><span style="font-size: 12px; font-weight: normal;">置信状态: {{ item.confidence }}</span>
+                </div>
+                {% endfor %}
+                {% else %}
+                <div class="report-item" style="background-color: #d5f5e3; color: #27ae60;">✅ 画面正常。</div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        {% if live_mode %}
+        <div class="result-container">
+            <div class="media-box">
+                <div class="live-badge">● LIVE 实时监控中</div>
+                <h3 style="text-align: center; color: #34495e; margin-top: 0;">AI 实时推理流</h3>
+                {% if engine == 'local' %}
+                <img src="{{ url_for('video_feed', areas=areas_str) }}" style="width: 100%;">
+                {% elif engine == 'web' %}
+                <video id="webVideo" autoplay playsinline style="display: none;"></video>
+                <canvas id="webCanvas" style="display: none;"></canvas>
+                <img id="webResultImg" src="" style="width: 100%; min-height: 400px; background-color: #2c3e50;">
+                {% endif %}
+            </div>
+            <div class="report-box">
+                <h3>动态安全报告</h3>
+                <div id="dynamicReport">
+                    <div class="report-item" style="background-color: #fcf3cf; color: #d4ac0d;">⚡ 实时画面解析中...</div>
+                </div>
+                <br>
+                <a href="/" style="display: block; text-align: center; background-color: #95a5a6; color: white; padding: 10px; border-radius: 5px; text-decoration: none;">关闭监控返回大厅</a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    {% if live_mode and engine == 'web' %}
+    <script>
+    const video = document.getElementById('webVideo');
+    const canvas = document.getElementById('webCanvas');
+    const ctx = canvas.getContext('2d');
+    const resultImg = document.getElementById('webResultImg');
+    const reportDiv = document.getElementById('dynamicReport');
+    const areasStr = "{{ areas_str }}";
+
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+    .then(stream => {
+        video.srcObject = stream;
+        video.onloadedmetadata = () => {
+            video.play();
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            requestAnimationFrame(processFrame);
+        };
+    })
+    .catch(err => {
+        alert("摄像头访问失败，请确保使用 HTTPS 协议，或在浏览器设置中开启权限。\\n报错信息: " + err);
+    });
+
+    function processFrame() {
+        if (video.paused || video.ended) return;
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const dataURL = canvas.toDataURL('image/jpeg', 0.6);
+        fetch('/detect_web_frame', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ image: dataURL, areas: areasStr })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.image) {
+                resultImg.src = data.image;
+                if (data.items.length > 0) {
+                    let html = '';
+                    data.items.forEach(item => {
+                        let isWarning = item.type.includes('违规') || item.type.includes('警报');
+                        let bgClass = isWarning ? 'warning-item' : '';
+                        html += '<div class="report-item ' + bgClass + '">📌 ' + item.type + ' <br><span style="font-size: 12px; font-weight: normal;">置信状态: 动态锁定</span></div>';
+                    });
+                    reportDiv.innerHTML = html;
+                } else {
+                    reportDiv.innerHTML = '<div class="report-item" style="background-color: #d5f5e3; color: #27ae60;">✅ 画面正常。</div>';
+                }
+            }
+            requestAnimationFrame(processFrame);
+        })
+        .catch(err => {
+            console.error('推理请求失败', err);
+            setTimeout(() => requestAnimationFrame(processFrame), 1000);
+        });
+    }
+    </script>
+    {% endif %}
+
+    <div class="footer">
+        基于 YOLOv11 与深度学习的校园智慧安防毕设展示平台
+    </div>
+</body>
+</html>
