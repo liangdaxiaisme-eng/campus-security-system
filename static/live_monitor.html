@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>智能校园安全监测 - 实时监控</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#111827;color:#fff;padding:20px;margin:0}
+h2{margin:0 0 20px 0}
+.btn{padding:15px 30px;font-size:18px;background:#3b82f6;color:#fff;border:none;border-radius:8px;cursor:pointer;margin:5px}
+.btn-danger{background:#ef4444}
+.btn-stop{background:#6b7280}
+#status{margin:15px 0;padding:10px;background:#1f2937;border-radius:8px}
+video{width:100%;max-width:500px;border-radius:8px;margin:10px 0;display:block}
+#result{width:100%;max-width:500px;border-radius:8px;margin:10px 0;display:none;border:2px solid #10b981}
+.alert{background:#7f1d1d;border:1px solid #ef4444;padding:10px;margin:5px 0;border-radius:6px}
+.safe{background:#064e3b;border:1px solid #10b981;padding:10px;margin:5px 0;border-radius:6px}
+</style>
+</head>
+<body>
+<h2>📹 智能校园安全监测 - 实时监控</h2>
+<button onclick="startCamera()" class="btn" id="startBtn">▶ 开启实时监控</button>
+<button onclick="stopCamera()" class="btn btn-stop" style="display:none;" id="stopBtn">⏹ 停止</button>
+<div id="status"></div>
+<video id="v" autoplay playsinline style="display:none;"></video>
+<img id="result" style="display:none;">
+<canvas id="c" style="display:none;"></canvas>
+
+<script>
+let stream=null;
+const areasStr="playground";
+
+function log(msg){
+document.getElementById('status').innerHTML=msg;
+}
+function startCamera(){
+log('🚀 正在请求摄像头权限...');
+document.getElementById('startBtn').style.display='none';
+document.getElementById('stopBtn').style.display='inline-block';
+document.getElementById('v').style.display='block';
+document.getElementById('result').style.display='none';
+
+if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){
+log('<div class="alert">❌ 浏览器不支持摄像头，请使用Chrome/Safari</div>');
+return;
+}
+navigator.mediaDevices.getUserMedia({video:{facingMode:"environment",width:{ideal:1280},height:{ideal:720}}}).then(function(s){
+stream=s;
+document.getElementById('v').srcObject=s;
+log('<div style="color:#10b981">✅ 摄像头已启动，正在实时分析...</div>');
+processFrame();
+}).catch(function(e){
+log('<div class="alert">❌ 错误: '+e.name+' - '+e.message+'</div>');
+document.getElementById('startBtn').style.display='inline-block';
+document.getElementById('stopBtn').style.display='none';
+});
+}
+function stopCamera(){
+if(stream){
+stream.getTracks().forEach(t=>t.stop());
+stream=null;
+}
+document.getElementById('v').style.display='none';
+document.getElementById('result').style.display='none';
+document.getElementById('startBtn').style.display='inline-block';
+document.getElementById('stopBtn').style.display='none';
+log('已停止');
+}
+function processFrame(){
+if(!stream||stream.getTracks().length===0)return;
+const v=document.getElementById('v');
+const c=document.getElementById('c');
+const ctx=c.getContext('2d');
+if(v.readyState!==4){requestAnimationFrame(processFrame);return;}
+c.width=v.videoWidth;
+c.height=v.videoHeight;
+ctx.drawImage(v,0,0,c.width,c.height);
+const dataURL=c.toDataURL('image/jpeg',0.6);
+fetch('/detect_web_frame',{
+method:'POST',
+headers:{'Content-Type':'application/json'},
+body:JSON.stringify({image:dataURL,areas:areasStr})
+}).then(r=>r.json()).then(data=>{
+if(data.image){
+document.getElementById('result').src=data.image;
+document.getElementById('result').style.display='block';
+if(data.items&&data.items.length>0){
+let html='<div class="alert">⚠️ 检测到 '+data.items.length+' 个目标:</div>';
+data.items.forEach(item=>{
+let cls=item.type.includes('违规')||item.type.includes('警报')?'alert':'safe';
+html+='<div class="'+cls+'">'+item.type+' ('+item.confidence+')</div>';
+});
+log(html);
+}else{
+log('<div class="safe">✅ 画面安全，未检测到异常</div>');
+}
+}else{
+log('<div style="color:#f59e0b">⏳ 分析中...</div>');
+}
+requestAnimationFrame(processFrame);
+}).catch(e=>{
+log('<div class="alert">❌ 检测错误: '+e.message+'</div>');
+requestAnimationFrame(processFrame);
+});
+}
+</script>
+</body>
+</html>

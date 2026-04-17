@@ -32,9 +32,14 @@ CLASS_MAP_CN = {
 }
 
 AREA_RULES = {
-    'lab': [0, 1, 2, 3, 5, 6], 
-    'gate': [0, 4, 5], 
-    'public': [0, 3, 5, 6] 
+    'lab':       [0, 1, 2, 3, 5, 6],   # 实验室：人员、安全帽、消防栓、异常、灭火器
+    'gate':      [0, 4, 5],             # 校门：人员、车辆、异常
+    'dormitory': [0, 5, 6],             # 宿舍：人员、异常、灭火器
+    'corridor':  [0, 3, 5, 6],          # 教学楼走廊：人员、消防栓、异常、灭火器
+    'playground': [0, 1, 2, 5],         # 操场：人员、安全帽、异常
+    'parking':   [0, 4, 5],             # 停车场：人员、车辆、异常
+    'fire_exit': [0, 3, 5, 6],          # 消防通道：消防栓、灭火器、人员、异常
+    'public':    [0, 3, 5, 6],          # 公共区域：人员、消防栓、异常、灭火器
 }
 
 def get_allowed_classes(areas_list):
@@ -60,8 +65,21 @@ def detect():
         filepath = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
         file.save(filepath)
 
-        selected_areas = request.form.getlist('areas')
-        allowed_classes = get_allowed_classes(selected_areas)
+        # 获取前端选择的区域
+        selected_area = request.form.get('area', 'playground')
+
+        # 核心亮点：基于区域的逻辑过滤字典 (对应 YOLO 训练时的类别 ID)
+        # 0:stranger, 1:no_helmet, 2:helmet, 3:fire_hydrant, 4:stranger_vehicle, 5:abnormal_behavior, 6:missing_extinguisher
+        area_rules = {
+            'lab':       [0, 1, 2, 3, 5, 6],   # 实验室：人员、安全帽、消防栓、异常、灭火器
+            'gate':      [0, 4, 5],             # 校门/停车场：人员、车辆、异常
+            'dorm':      [0, 5, 6],             # 宿舍：人员、异常、灭火器
+            'corridor':  [0, 3, 5, 6],          # 走廊/消防通道：人员、消防栓、异常、灭火器
+            'playground': [0, 1, 2, 5],        # 操场：人员、安全帽、异常
+        }
+
+        # 获取当前区域允许的类别 ID 列表
+        allowed_classes = area_rules.get(selected_area, [0, 1, 2, 3, 4, 5, 6])
 
         if ext in ['jpg', 'jpeg', 'png']:
             results = model.predict(source=filepath, save=False, classes=allowed_classes)
@@ -129,23 +147,35 @@ def gen_camera_frames(allowed_classes):
 
 @app.route('/live_camera', methods=['POST'])
 def live_camera():
-    selected_areas = request.form.getlist('areas')
-    areas_str = ",".join(selected_areas) if selected_areas else "public"
-    return render_template('index.html', live_mode=True, areas_str=areas_str, engine='local')
+    selected_area = request.form.get('area', 'playground')
+    area_rules = {
+        'lab':       [0, 1, 2, 3, 5, 6],
+        'gate':      [0, 4, 5],
+        'dorm':      [0, 5, 6],
+        'corridor':  [0, 3, 5, 6],
+        'playground': [0, 1, 2, 5],
+    }
+    allowed_classes = area_rules.get(selected_area, [0, 1, 2, 3, 4, 5, 6])
+    return render_template('index.html', live_mode=True, areas_str=selected_area, engine='local')
 
 @app.route('/video_feed')
 def video_feed():
-    areas_str = request.args.get('areas', 'public')
-    selected_areas = areas_str.split(',')
-    allowed_classes = get_allowed_classes(selected_areas)
+    area_str = request.args.get('areas', 'playground')
+    area_rules = {
+        'lab':       [0, 1, 2, 3, 5, 6],
+        'gate':      [0, 4, 5],
+        'dorm':      [0, 5, 6],
+        'corridor':  [0, 3, 5, 6],
+        'playground': [0, 1, 2, 5],
+    }
+    allowed_classes = area_rules.get(area_str, [0, 1, 2, 3, 4, 5, 6])
     return Response(gen_camera_frames(allowed_classes), mimetype='multipart/x-mixed-replace; boundary=frame')
 
 # ================= 引擎2：跨设备前端推流接口 =================
 @app.route('/web_camera_ui', methods=['POST'])
 def web_camera_ui():
-    selected_areas = request.form.getlist('areas')
-    areas_str = ",".join(selected_areas) if selected_areas else "public"
-    return render_template('index.html', live_mode=True, areas_str=areas_str, engine='web')
+    selected_area = request.form.get('area', 'playground')
+    return render_template('index.html', live_mode=True, areas_str=selected_area, engine='web')
 
 @app.route('/detect_web_frame', methods=['POST'])
 def detect_web_frame():
@@ -158,8 +188,15 @@ def detect_web_frame():
     nparr = np.frombuffer(img_bytes, np.uint8)
     frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
 
-    selected_areas = data.get('areas', 'public').split(',')
-    allowed_classes = get_allowed_classes(selected_areas)
+    selected_area = data.get('areas', 'playground')
+    area_rules = {
+        'lab':       [0, 1, 2, 3, 5, 6],
+        'gate':      [0, 4, 5],
+        'dorm':      [0, 5, 6],
+        'corridor':  [0, 3, 5, 6],
+        'playground': [0, 1, 2, 5],
+    }
+    allowed_classes = area_rules.get(selected_area, [0, 1, 2, 3, 4, 5, 6])
 
     if model:
         results = model.predict(source=frame, save=False, classes=allowed_classes, verbose=False)
@@ -182,4 +219,4 @@ def detect_web_frame():
     return jsonify({'error': '模型未加载'}), 500
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True, ssl_context='adhoc')
+    app.run(host='0.0.0.0', port=5000, debug=True, ssl_context=('cert.pem', 'key.pem'))

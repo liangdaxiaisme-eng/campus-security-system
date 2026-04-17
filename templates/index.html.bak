@@ -120,15 +120,15 @@
         .stats-row {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
-            gap: 16px;
-            padding: 16px 32px;
+            gap: 20px;
+            padding: 24px 32px;
         }
 
         .stat-card {
             background: var(--bg-card);
             border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 16px 20px;
+            border-radius: 14px;
+            padding: 20px 24px;
             position: relative;
             overflow: hidden;
             transition: all 0.3s;
@@ -155,14 +155,14 @@
         .stat-card:nth-child(4)::before { background: linear-gradient(90deg, var(--danger), #f87171); }
 
         .stat-icon {
-            width: 40px;
-            height: 40px;
-            border-radius: 10px;
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 20px;
-            margin-bottom: 10px;
+            font-size: 22px;
+            margin-bottom: 14px;
         }
 
         .stat-card:nth-child(1) .stat-icon { background: rgba(59,130,246,0.15); color: var(--primary); }
@@ -171,24 +171,24 @@
         .stat-card:nth-child(4) .stat-icon { background: rgba(239,68,68,0.15); color: var(--danger); }
 
         .stat-value {
-            font-size: 24px;
-            font-weight: 700;
+            font-size: 28px;
+            font-weight: 800;
             color: var(--text-bright);
             line-height: 1;
-            margin-bottom: 2px;
+            margin-bottom: 4px;
         }
 
         .stat-label {
-            font-size: 12px;
+            font-size: 13px;
             color: var(--text-dim);
         }
 
         /* ========== 主内容区 ========== */
         .main-content {
             display: grid;
-            grid-template-columns: 1fr 320px;
-            gap: 16px;
-            padding: 0 24px 24px;
+            grid-template-columns: 1fr 380px;
+            gap: 20px;
+            padding: 0 32px 32px;
         }
 
         /* ========== 检测面板 ========== */
@@ -200,7 +200,7 @@
         }
 
         .panel-header {
-            padding: 12px 16px;
+            padding: 18px 24px;
             border-bottom: 1px solid var(--border);
             display: flex;
             align-items: center;
@@ -222,7 +222,7 @@
         }
 
         .panel-body {
-            padding: 16px;
+            padding: 24px;
         }
 
         /* ========== 区域选择 ========== */
@@ -265,7 +265,7 @@
         .upload-zone {
             border: 2px dashed var(--border);
             border-radius: 12px;
-            padding: 30px;
+            padding: 40px;
             text-align: center;
             transition: all 0.3s;
             cursor: pointer;
@@ -279,9 +279,9 @@
         }
 
         .upload-zone i {
-            font-size: 40px;
+            font-size: 48px;
             color: var(--primary);
-            margin-bottom: 10px;
+            margin-bottom: 12px;
             display: block;
         }
 
@@ -314,26 +314,26 @@
         .action-buttons {
             display: grid;
             grid-template-columns: 1fr 1fr 1fr;
-            gap: 10px;
-            margin-top: 16px;
+            gap: 12px;
+            margin-top: 20px;
         }
 
         .action-btn {
-            padding: 12px 14px;
+            padding: 14px 16px;
             border: none;
-            border-radius: 8px;
-            font-size: 13px;
+            border-radius: 10px;
+            font-size: 14px;
             font-weight: 600;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 6px;
+            gap: 8px;
             transition: all 0.3s;
             color: white;
         }
 
-        .action-btn i { font-size: 16px; }
+        .action-btn i { font-size: 18px; }
 
         .btn-detect {
             background: linear-gradient(135deg, #2563eb, #3b82f6);
@@ -408,8 +408,8 @@
         .report-list {
             display: flex;
             flex-direction: column;
-            gap: 8px;
-            max-height: 400px;
+            gap: 10px;
+            max-height: 500px;
             overflow-y: auto;
         }
 
@@ -418,8 +418,8 @@
         .report-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
 
         .report-item {
-            padding: 12px 14px;
-            border-radius: 8px;
+            padding: 14px 16px;
+            border-radius: 10px;
             border: 1px solid var(--border);
             background: rgba(255,255,255,0.02);
             transition: all 0.2s;
@@ -516,11 +516,11 @@
         /* ========== 底部信息 ========== */
         .footer-bar {
             text-align: center;
-            padding: 16px;
+            padding: 20px;
             color: var(--text-dim);
             font-size: 12px;
             border-top: 1px solid var(--border);
-            margin-top: 16px;
+            margin-top: 20px;
         }
 
         .footer-bar span {
@@ -675,11 +675,11 @@
             </div>
             <div class="panel-body">
                 <!-- 区域选择 -->
-                <div style="margin-bottom: 10px; font-size: 13px; color: var(--text-dim);">
+                <div style="margin-bottom: 14px; font-size: 13px; color: var(--text-dim);">
                     <i class="ri-map-pin-line"></i> 部署区域选择
                 </div>
-                <div style="margin-bottom: 14px;">
-                    <label style="font-weight: bold; color: var(--text-bright); display: block; margin-bottom: 6px;">📍 请选择摄像头部署区域：</label>
+                <div style="margin-bottom: 20px;">
+                    <label style="font-weight: bold; color: var(--text-bright); display: block; margin-bottom: 8px;">📍 请选择摄像头部署区域：</label>
                     <select name="area" style="width: 100%; padding: 10px; font-size: 14px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-card); color: var(--text); cursor: pointer;">
                         <option value="lab">工程实验室</option>
                         <option value="gate">校门进出口 / 停车场</option>
@@ -704,18 +704,15 @@
                     <!-- 操作按钮 -->
                     <div class="action-buttons">
                         {% if not live_mode %}
-                        <button type="button" class="action-btn btn-detect" onclick="doDetect(); return false;">
+                        <button type="submit" class="action-btn btn-detect" formaction="/detect" id="detectBtn">
                             <i class="ri-search-eye-line"></i>
                             <span>AI 智能检测</span>
                         </button>
-                        <button type="button" class="action-btn btn-camera" onclick="showLocalCamera()">
+                        <button type="submit" class="action-btn btn-camera" formaction="/live_camera">
                             <i class="ri-camera-line"></i>
                             <span>本地摄像头</span>
                         </button>
-                        <button type="button" class="action-btn btn-mobile" onclick="showLiveMonitor()">
-                            <i class="ri-live-line"></i>
-                            <span>实时监控</span>
-                        </button>
+                        <button type="submit" class="action-btn btn-mobile" formaction="/web_camera_ui">
                             <i class="ri-live-line"></i>
                             <span>实时监控</span>
                         </button>
@@ -843,64 +840,6 @@
             document.getElementById('fileName').textContent = name ? '📄 ' + name : '';
         }
 
-        // AI智能检测AJAX
-        function doDetect() {
-            const fileInput = document.getElementById('fileInput');
-            const file = fileInput.files[0];
-            if (!file) {
-                alert('请先选择要检测的图片或视频');
-                return;
-            }
-            
-            var uploadZone = document.getElementById('uploadZone');
-            uploadZone.innerHTML = '<div style="padding:40px;text-align:center;"><i class="ri-loader-4-line" style="font-size:40px;color:var(--primary);animation:spin 1s linear infinite;"></i><p style="margin-top:10px;">正在AI检测中...</p></div>';
-            
-            // 更新右侧状态
-            document.getElementById('reportStatus').innerHTML = '<span style="color:var(--warning);">检测中...</span>';
-            
-            const formData = new FormData();
-            formData.append('file', file);
-            
-            fetch('/detect', {
-                method: 'POST',
-                body: formData
-            }).then(r => r.text()).then(html => {
-                // 解析返回的HTML，提取结果图片
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(html, 'text/html');
-                const resultImg = doc.querySelector('.result-media img');
-                const resultVideo = doc.querySelector('.result-media video');
-                const reportItems = doc.querySelectorAll('.report-item');
-                
-                if (resultImg) {
-                    const imgSrc = resultImg.src;
-                    uploadZone.innerHTML = '<div style="text-align:center;"><h3 style="margin:0 0 10px;color:var(--success);">✅ 检测完成</h3><img src="' + imgSrc + '" style="width:100%;max-width:600px;border-radius:8px;"></div>';
-                } else if (resultVideo) {
-                    const videoSrc = resultVideo.querySelector('source').src;
-                    uploadZone.innerHTML = '<div style="text-align:center;"><h3 style="margin:0 0 10px;color:var(--success);">✅ 检测完成</h3><video controls style="width:100%;max-width:600px;border-radius:8px;"><source src="' + videoSrc + '" type="video/mp4"></video></div>';
-                } else {
-                    uploadZone.innerHTML = '<div style="padding:20px;text-align:center;color:var(--danger);">检测失败，请重试</div>';
-                }
-                
-                // 更新右侧检测报告
-                const reportList = document.querySelector('.report-list');
-                if (reportList && reportItems.length > 0) {
-                    let reportHtml = '';
-                    reportItems.forEach(item => {
-                        reportHtml += item.outerHTML;
-                    });
-                    reportList.innerHTML = reportHtml;
-                    document.getElementById('reportStatus').innerHTML = '<span style="color:var(--success);">已完成</span>';
-                } else {
-                    reportList.innerHTML = '<div class="report-safe"><i class="ri-shield-check-line"></i><p>画面安全，未检测到异常目标</p></div>';
-                    document.getElementById('reportStatus').innerHTML = '<span style="color:var(--success);">安全</span>';
-                }
-            }).catch(e => {
-                uploadZone.innerHTML = '<div style="padding:20px;text-align:center;color:var(--danger);">错误: ' + e.message + '</div>';
-                document.getElementById('reportStatus').innerHTML = '<span style="color:var(--danger);">错误</span>';
-            });
-        }
-
         // 拖拽上传
         const zone = document.getElementById('uploadZone');
         zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
@@ -1017,214 +956,5 @@
         }
         {% endif %}
     </script>
-
-    <!-- 实时监控容器（默认隐藏，替换上传区域） -->
-    <div id="liveMonitorContainer" style="display:none; opacity:0; transition: opacity 0.4s ease-out;">
-        <h2 style="margin:0 0 15px;">📹 实时监控</h2>
-        <button type="button" onclick="startLiveCam(); return false;" class="action-btn" style="background:#3b82f6;padding:12px 20px;color:#fff;border:none;border-radius:8px;cursor:pointer" id=startBtn>▶ 开启实时监控</button>
-        <button type="button" onclick="stopLiveCam(); return false;" class="action-btn" style="background:#6b7280;padding:12px 20px;color:#fff;border:none;border-radius:8px;cursor:pointer;display:none" id=stopBtn>⏹ 停止</button>
-        <div id="liveStatus" style="margin:10px 0;"></div>
-        <div style="display:flex;gap:10px;margin-top:10px;">
-            <video id="liveVideo" autoplay playsinline style="width:50%;display:none;"></video>
-            <img id="liveResult" style="width:50%;display:none;">
-        </div>
-        <canvas id="liveCanvas" style="display:none;"></canvas>
-        <script>
-        let liveStream=null;
-        function showLiveMonitor(){
-            var uploadZone = document.getElementById('uploadZone');
-            var liveContainer = document.getElementById('liveMonitorContainer');
-            if(uploadZone && liveContainer) {
-                // 获取上传区域的位置信息
-                var parent = uploadZone.parentNode;
-                // 在上传区域位置插入监控容器
-                parent.insertBefore(liveContainer, uploadZone);
-                // 隐藏上传区域，显示监控容器
-                uploadZone.style.display = 'none';
-                liveContainer.style.display = 'block';
-                // 淡入动画
-                setTimeout(function() {
-                    liveContainer.style.opacity = '1';
-                    // 自动启动摄像头
-                    startLiveCam();
-                }, 50);
-            }
-        }
-        function startLiveCam(){
-            document.getElementById("startBtn").style.display="none";
-            document.getElementById("stopBtn").style.display="inline-block";
-            document.getElementById("liveStatus").innerHTML="🚀 请求摄像头权限...";
-            if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){
-                document.getElementById("liveStatus").innerHTML="<div style=color:#ef4444>❌ 浏览器不支持摄像头</div>";
-                return;
-            }
-            navigator.mediaDevices.getUserMedia({video:{facingMode:"environment",width:{ideal:1280}}}).then(function(s){
-                liveStream=s;
-                document.getElementById("liveVideo").srcObject=s;
-                document.getElementById("liveVideo").style.display="block";
-                document.getElementById("liveStatus").innerHTML="<div style=color:#10b981>✅ 摄像头已启动</div>";
-                processLiveFrame();
-            }).catch(function(e){
-                document.getElementById("liveStatus").innerHTML="<div style=color:#ef4444>❌ "+e.name+": "+e.message+"</div>";
-                document.getElementById("startBtn").style.display="inline-block";
-                document.getElementById("stopBtn").style.display="none";
-            });
-        }
-        function stopLiveCam(){
-            if(liveStream){
-                liveStream.getTracks().forEach(function(t){t.stop()});
-                liveStream=null;
-            }
-            document.getElementById("liveVideo").style.display="none";
-            document.getElementById("liveResult").style.display="none";
-            document.getElementById("stopBtn").style.display="none";
-            document.getElementById("startBtn").style.display="inline-block";
-            document.getElementById("liveStatus").innerHTML="已停止";
-        }
-        function processLiveFrame(){
-            if(!liveStream||liveStream.getTracks().length===0) return;
-            var v=document.getElementById("liveVideo");
-            var c=document.getElementById("liveCanvas");
-            if(v.readyState!==4){
-                requestAnimationFrame(processLiveFrame);
-                return;
-            }
-            c.width=v.videoWidth;
-            c.height=v.videoHeight;
-            c.getContext("2d").drawImage(v,0,0,c.width,c.height);
-            var dataURL=c.toDataURL("image/jpeg",0.6);
-            fetch("/detect_web_frame",{
-                method:"POST",
-                headers:{"Content-Type":"application/json"},
-                body:JSON.stringify({image:dataURL,areas:"playground"})
-            }).then(function(r){return r.json()}).then(function(data){
-                if(data.image){
-                    document.getElementById("liveResult").src=data.image;
-                    document.getElementById("liveResult").style.display="block";
-                }
-                requestAnimationFrame(processLiveFrame);
-            }).catch(function(){
-                requestAnimationFrame(processLiveFrame);
-            });
-        }
-        </script>
-    </div>
-
-    <!-- 本地摄像头容器（默认隐藏，替换上传区域） -->
-    <div id="localCameraContainer" style="display:none; opacity:0; transition: opacity 0.4s ease-out;">
-        <h2 style="margin:0 0 15px;">📷 本地摄像头</h2>
-        <div style="margin-bottom:10px;">
-            <button type="button" onclick="switchCamera()" class="action-btn" style="background:#6b7280;padding:10px 16px;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px;">🔄 切换摄像头</button>
-        </div>
-        <div id="localStatus" style="margin:10px 0;"></div>
-        <div style="display:flex;justify-content:center;">
-            <img id="localResult" style="width:100%;max-width:600px;display:none;">
-        </div>
-        <canvas id="localCanvas" style="display:none;"></canvas>
-        <script>
-        let localStream=null;
-        let currentCameraId=0;
-        let cameras=[];
-        
-        function showLocalCamera(){
-            var uploadZone = document.getElementById('uploadZone');
-            var localContainer = document.getElementById('localCameraContainer');
-            if(uploadZone && localContainer) {
-                var parent = uploadZone.parentNode;
-                parent.insertBefore(localContainer, uploadZone);
-                uploadZone.style.display = 'none';
-                localContainer.style.display = 'block';
-                setTimeout(function() {
-                    localContainer.style.opacity = '1';
-                    startLocalCam();
-                }, 50);
-            }
-        }
-        
-        async function getCameras(){
-            if(cameras.length===0){
-                try{
-                    const devices=await navigator.mediaDevices.enumerateDevices();
-                    cameras=devices.filter(d=>d.kind==='videoinput');
-                }catch(e){
-                    console.log('无法获取摄像头列表',e);
-                }
-            }
-            return cameras;
-        }
-        
-        async function startLocalCam(){
-            const status=document.getElementById('localStatus');
-            const cams=await getCameras();
-            if(cams.length===0){
-                status.innerHTML="<div style=color:#ef4444>❌ 未找到摄像头</div>";
-                return;
-            }
-            status.innerHTML="🚀 正在启动摄像头...";
-            
-            const constraints={
-                video: cams[currentCameraId] ? {deviceId: cams[currentCameraId].deviceId} : {facingMode:"environment"}
-            };
-            
-            if(localStream){
-                localStream.getTracks().forEach(t=>t.stop());
-            }
-            
-            try{
-                localStream=await navigator.mediaDevices.getUserMedia(constraints);
-                status.innerHTML="<div style=color:#10b981>✅ 摄像头已启动 (摄像头 "+(currentCameraId+1)+"/"+cams.length+")</div>";
-                processLocalFrame();
-            }catch(e){
-                status.innerHTML="<div style=color:#ef4444>❌ 错误: "+e.message+"</div>";
-            }
-        }
-        
-        async function switchCamera(){
-            const cams=await getCameras();
-            if(cams.length<=1){
-                alert('只有一个摄像头，无法切换');
-                return;
-            }
-            currentCameraId=(currentCameraId+1)%cams.length;
-            startLocalCam();
-        }
-        
-        function processLocalFrame(){
-            if(!localStream||localStream.getTracks().length===0) return;
-            // 本地摄像头只显示检测结果，不显示原始视频
-            const c=document.getElementById('localCanvas');
-            const ctx=c.getContext('2d');
-            // 创建一个隐藏的视频元素来捕获帧
-            const v=document.createElement('video');
-            v.srcObject=localStream;
-            v.play();
-            
-            function capture(){
-                if(v.readyState!==4){
-                    requestAnimationFrame(capture);
-                    return;
-                }
-                c.width=v.videoWidth;
-                c.height=v.videoHeight;
-                ctx.drawImage(v,0,0,c.width,c.height);
-                const dataURL=c.toDataURL('image/jpeg',0.6);
-                fetch('/detect_web_frame',{
-                    method:'POST',
-                    headers:{'Content-Type':'application/json'},
-                    body:JSON.stringify({image:dataURL,areas:"playground"})
-                }).then(r=>r.json()).then(data=>{
-                    if(data.image){
-                        document.getElementById('localResult').src=data.image;
-                        document.getElementById('localResult').style.display='block';
-                    }
-                    requestAnimationFrame(capture);
-                }).catch(e=>{
-                    requestAnimationFrame(capture);
-                });
-            }
-            capture();
-        }
-        </script>
-    </div>
 </body>
 </html>
