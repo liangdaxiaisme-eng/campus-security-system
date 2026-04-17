@@ -86,7 +86,27 @@
         .topbar-right {
             display: flex;
             align-items: center;
-            gap: 24px;
+            gap: 16px;
+        }
+        .topbar-right a {
+            color: var(--text-dim);
+            text-decoration: none;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            transition: color 0.2s;
+        }
+        .topbar-right a:hover { color: var(--text); }
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            color: var(--text-dim);
+            padding: 4px 10px;
+            border-radius: 6px;
+            background: rgba(255,255,255,0.04);
         }
 
         .status-indicator {
@@ -669,6 +689,9 @@
                 系统运行中
             </div>
             <div class="time-display" id="clock"></div>
+            <a href="/history"><i class="ri-history-line"></i> 历史</a>
+            <div class="user-info"><i class="ri-user-3-line"></i> {{ username or 'admin' }}</div>
+            <a href="/logout" style="color: var(--danger);"><i class="ri-logout-box-r-line"></i> 退出</a>
         </div>
     </div>
 
@@ -773,19 +796,7 @@
                 </div>
                 {% endif %}
 
-                <!-- 图片/视频检测结果 -->
-                {% if file_type %}
-                <div class="result-media" style="margin-top: 20px;">
-                    <div class="scan-line active"></div>
-                    {% if file_type == 'image' %}
-                    <img src="{{ url_for('static', filename='results/' + result_file) }}" alt="检测结果">
-                    {% elif file_type == 'video' %}
-                    <video controls autoplay loop muted>
-                        <source src="{{ url_for('static', filename='results/' + result_file) }}" type="video/mp4">
-                    </video>
-                    {% endif %}
-                </div>
-                {% endif %}
+                <!-- AJAX 检测结果将动态插入此处 -->
             </div>
         </div>
 
@@ -799,30 +810,7 @@
                 <span class="model-tag" id="reportStatus">待检测</span>
             </div>
             <div class="panel-body">
-                {% if file_type and detected_items %}
-                <div class="report-list">
-                    {% for item in detected_items %}
-                    {% set is_danger = '违规' in item.type or '警报' in item.type or '缺失' in item.type %}
-                    <div class="report-item {% if is_danger %}danger{% endif %}">
-                        <div class="report-item-header">
-                            <div class="report-item-type">
-                                <i class="{% if is_danger %}ri-error-warning-line{% else %}ri-checkbox-circle-line{% endif %}"></i>
-                                {{ item.type }}
-                            </div>
-                            <span class="report-item-conf">{{ item.confidence }}</span>
-                        </div>
-                        <div class="report-item-bar">
-                            <div class="report-item-bar-fill" style="width: {% if is_danger %}95%{% else %}75%{% endif %};"></div>
-                        </div>
-                    </div>
-                    {% endfor %}
-                </div>
-                {% elif file_type and not detected_items %}
-                <div class="report-safe">
-                    <i class="ri-shield-check-line"></i>
-                    <p>画面安全，未检测到异常目标</p>
-                </div>
-                {% elif live_mode %}
+                {% if live_mode %}
                 <div class="report-list" id="dynamicReport">
                     <div class="report-item">
                         <div class="report-item-header">
@@ -835,10 +823,12 @@
                     </div>
                 </div>
                 {% else %}
-                <div class="empty-state">
-                    <i class="ri-search-eye-line"></i>
-                    <h3>等待检测任务</h3>
-                    <p>上传图片或开启摄像头开始检测</p>
+                <div class="report-list" id="reportPanel">
+                    <div class="empty-state">
+                        <i class="ri-search-eye-line"></i>
+                        <h3>等待检测任务</h3>
+                        <p>上传图片或开启摄像头开始检测</p>
+                    </div>
                 </div>
                 {% endif %}
             </div>
@@ -873,7 +863,16 @@
             document.getElementById('fileName').textContent = name ? '📄 ' + name : '';
         }
 
-        // AI智能检测AJAX
+        // 区域名映射
+        const AREA_NAMES = {
+            'lab': '🔬 工程实验室',
+            'gate': '🚪 校门进出口',
+            'dorm': '🏠 宿舍区域',
+            'corridor': '🏫 教学楼走廊',
+            'playground': '🏟️ 操场/公共区域'
+        };
+
+        // AI智能检测 - 支持图片和视频异步处理
         function doDetect() {
             const fileInput = document.getElementById('fileInput');
             const file = fileInput.files[0];
@@ -881,64 +880,105 @@
                 alert('请先选择要检测的图片或视频');
                 return;
             }
-            
+
+            const area = document.querySelector('select[name="area"]').value;
             var uploadZone = document.getElementById('uploadZone');
-            uploadZone.innerHTML = '<div style="padding:40px;text-align:center;"><i class="ri-loader-4-line" style="font-size:40px;color:var(--primary);animation:spin 1s linear infinite;"></i><p style="margin-top:10px;">正在AI检测中...</p></div>';
-            
-            // 更新右侧状态
+            uploadZone.innerHTML = '<div style="padding:40px;text-align:center;"><i class="ri-loader-4-line" style="font-size:40px;color:var(--primary);animation:spin 1s linear infinite;display:block;margin-bottom:12px;"></i><p style="color:var(--text);">正在AI检测中...</p><p id="progressText" style="font-size:13px;color:var(--text-dim);margin-top:6px;"></p></div>';
             document.getElementById('reportStatus').innerHTML = '<span style="color:var(--warning);">检测中...</span>';
-            
+
             const formData = new FormData();
             formData.append('file', file);
-            
-            fetch('/detect', {
-                method: 'POST',
-                body: formData
-            }).then(r => r.text()).then(html => {
-                // 解析返回的HTML，提取结果图片
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(html, 'text/html');
-                const resultImg = doc.querySelector('.result-media img');
-                const resultVideo = doc.querySelector('.result-media video');
-                const reportItems = doc.querySelectorAll('.report-item');
-                
-                if (resultImg) {
-                    const imgSrc = resultImg.src;
-                    uploadZone.innerHTML = '<div style="text-align:center;"><h3 style="margin:0 0 10px;color:var(--success);">✅ 检测完成</h3><img src="' + imgSrc + '" style="width:100%;max-width:600px;border-radius:8px;"></div>';
-                } else if (resultVideo) {
-                    const videoSrc = resultVideo.querySelector('source').src;
-                    uploadZone.innerHTML = '<div style="text-align:center;"><h3 style="margin:0 0 10px;color:var(--success);">✅ 检测完成</h3><video controls style="width:100%;max-width:600px;border-radius:8px;"><source src="' + videoSrc + '" type="video/mp4"></video></div>';
+            formData.append('area', area);
+
+            fetch('/detect', { method: 'POST', body: formData })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.error) {
+                        uploadZone.innerHTML = '<div style="padding:20px;text-align:center;color:var(--danger);">❌ ' + data.error + '</div>';
+                        document.getElementById('reportStatus').innerHTML = '<span style="color:var(--danger);">错误</span>';
+                        return;
+                    }
+
+                    // 图片：直接返回结果
+                    if (data.file_type === 'image') {
+                        showDetectionResult(data);
+                        return;
+                    }
+
+                    // 视频：轮询任务进度
+                    if (data.task_id) {
+                        pollTaskStatus(data.task_id);
+                    }
+                })
+                .catch(e => {
+                    uploadZone.innerHTML = '<div style="padding:20px;text-align:center;color:var(--danger);">错误: ' + e.message + '</div>';
+                    document.getElementById('reportStatus').innerHTML = '<span style="color:var(--danger);">错误</span>';
+                });
+        }
+
+        // 轮询视频处理进度
+        function pollTaskStatus(taskId) {
+            const interval = setInterval(() => {
+                fetch('/task_status/' + taskId)
+                    .then(r => r.json())
+                    .then(data => {
+                        const pt = document.getElementById('progressText');
+                        if (pt) pt.textContent = '处理进度: ' + (data.progress || 0) + '%';
+
+                        if (data.status === 'done') {
+                            clearInterval(interval);
+                            showDetectionResult(data);
+                        } else if (data.status === 'error') {
+                            clearInterval(interval);
+                            document.getElementById('uploadZone').innerHTML = '<div style="padding:20px;text-align:center;color:var(--danger);">❌ 处理失败: ' + data.error + '</div>';
+                            document.getElementById('reportStatus').innerHTML = '<span style="color:var(--danger);">错误</span>';
+                        }
+                    })
+                    .catch(() => {});
+            }, 1000);
+        }
+
+        // 显示检测结果
+        function showDetectionResult(data) {
+            const uploadZone = document.getElementById('uploadZone');
+            let mediaHtml = '';
+            if (data.file_type === 'image') {
+                mediaHtml = '<img src="/static/results/' + data.result_file + '" style="width:100%;border-radius:8px;">';
+            } else {
+                mediaHtml = '<video controls autoplay loop muted style="width:100%;border-radius:8px;"><source src="/static/results/' + data.result_file + '" type="video/mp4"></video>';
+            }
+            uploadZone.innerHTML = '<div style="text-align:center;"><h3 style="margin:0 0 10px;color:var(--success);">✅ 检测完成</h3>' + mediaHtml + '</div>';
+
+            // 更新报告面板
+            var panelBody = document.querySelectorAll('.panel .panel-body')[1];
+            if (panelBody && data.detected_items) {
+                if (data.detected_items.length > 0) {
+                    let html = '<div class="report-list">';
+                    data.detected_items.forEach(item => {
+                        let danger = item.type.includes('违规') || item.type.includes('警报') || item.type.includes('缺失');
+                        html += '<div class="report-item ' + (danger ? 'danger' : '') + '">' +
+                            '<div class="report-item-header"><div class="report-item-type"><i class="' + (danger ? 'ri-error-warning-line' : 'ri-checkbox-circle-line') + '"></i> ' + item.type + '</div>' +
+                            '<span class="report-item-conf">' + (item.confidence || '动态捕获') + '</span></div>' +
+                            '<div class="report-item-bar"><div class="report-item-bar-fill" style="width:' + (danger ? '95' : '75') + '%;"></div></div></div>';
+                    });
+                    html += '</div>';
+                    panelBody.innerHTML = html;
                 } else {
-                    uploadZone.innerHTML = '<div style="padding:20px;text-align:center;color:var(--danger);">检测失败，请重试</div>';
+                    panelBody.innerHTML = '<div class="report-safe"><i class="ri-shield-check-line"></i><p>画面安全，未检测到异常目标</p></div>';
                 }
-                
-                // 更新右侧检测报告
-                var reportList = document.querySelector('.report-list');
-                // 如果不存在 report-list 容器，找到 report 面板的 body 创建一个
-                if (!reportList) {
-                    var panelBody = document.querySelectorAll('.panel .panel-body')[1];
-                    if (panelBody) {
-                        panelBody.innerHTML = '<div class="report-list"></div>';
-                        reportList = panelBody.querySelector('.report-list');
-                    }
-                }
-                if (reportList) {
-                    if (reportItems.length > 0) {
-                        let reportHtml = '';
-                        reportItems.forEach(item => {
-                            reportHtml += item.outerHTML;
-                        });
-                        reportList.innerHTML = reportHtml;
-                        document.getElementById('reportStatus').innerHTML = '<span style="color:var(--success);">已完成</span>';
-                    } else {
-                        reportList.innerHTML = '<div class="report-safe"><i class="ri-shield-check-line"></i><p>画面安全，未检测到异常目标</p></div>';
-                        document.getElementById('reportStatus').innerHTML = '<span style="color:var(--success);">安全</span>';
-                    }
-                }
-            }).catch(e => {
-                uploadZone.innerHTML = '<div style="padding:20px;text-align:center;color:var(--danger);">错误: ' + e.message + '</div>';
-                document.getElementById('reportStatus').innerHTML = '<span style="color:var(--danger);">错误</span>';
-            });
+                document.getElementById('reportStatus').innerHTML = '<span style="color:var(--success);">已完成</span>';
+            }
+
+            // 更新统计
+            if (data.detected_items) {
+                document.getElementById('totalDetections').textContent = data.detected_items.length;
+                let warnings = 0;
+                data.detected_items.forEach(item => {
+                    if (item.type.includes('违规') || item.type.includes('警报') || item.type.includes('缺失')) warnings++;
+                });
+                document.getElementById('warningCount').textContent = warnings;
+                document.getElementById('normalCount').textContent = Math.max(0, 8 - warnings);
+            }
         }
 
         // 拖拽上传
@@ -953,26 +993,10 @@
             handleFileSelect(input);
         });
 
-        // 更新统计卡片
-        {% if detected_items %}
-        document.getElementById('totalDetections').textContent = {{ detected_items|length }};
-        let warnings = 0, normals = 0;
-        {% for item in detected_items %}
-            {% if '违规' in item.type or '警报' in item.type or '缺失' in item.type %}
-            warnings++;
-            {% else %}
-            normals++;
-            {% endif %}
-        {% endfor %}
-        document.getElementById('warningCount').textContent = warnings;
-        document.getElementById('normalCount').textContent = (8 - warnings) > 0 ? (8 - warnings) : 0;
-        document.getElementById('reportStatus').textContent = '已完成';
-        document.getElementById('reportStatus').style.color = 'var(--success)';
-        {% else %}
+        // 初始化统计卡片
         document.getElementById('totalDetections').textContent = '0';
         document.getElementById('normalCount').textContent = '8';
         document.getElementById('warningCount').textContent = '0';
-        {% endif %}
 
         // WebRTC 实时推流
         {% if live_mode and engine == 'web' %}
@@ -1021,7 +1045,18 @@
         function processFrame() {
             if (video.paused || video.ended) return;
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-            const dataURL = canvas.toDataURL('image/jpeg', 0.6);
+            // 缩小到 640px 以减少带宽
+            const maxDim = Math.max(canvas.width, canvas.height);
+            let sendCanvas = canvas;
+            if (maxDim > 640) {
+                const scale = 640 / maxDim;
+                const tmpCanvas = document.createElement('canvas');
+                tmpCanvas.width = Math.round(canvas.width * scale);
+                tmpCanvas.height = Math.round(canvas.height * scale);
+                tmpCanvas.getContext('2d').drawImage(canvas, 0, 0, tmpCanvas.width, tmpCanvas.height);
+                sendCanvas = tmpCanvas;
+            }
+            const dataURL = sendCanvas.toDataURL('image/jpeg', 0.5);
             fetch('/detect_web_frame', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -1131,8 +1166,12 @@
             }
             c.width=v.videoWidth;
             c.height=v.videoHeight;
-            c.getContext("2d").drawImage(v,0,0,c.width,c.height);
-            var dataURL=c.toDataURL("image/jpeg",0.6);
+            var cx=c.getContext("2d");
+            cx.drawImage(v,0,0,c.width,c.height);
+            // 缩小以减少带宽
+            var md=Math.max(c.width,c.height),sc=640/md,tc=c;
+            if(md>640){tc=document.createElement("canvas");tc.width=Math.round(c.width*sc);tc.height=Math.round(c.height*sc);tc.getContext("2d").drawImage(c,0,0,tc.width,tc.height);}
+            var dataURL=tc.toDataURL("image/jpeg",0.5);
             fetch("/detect_web_frame",{
                 method:"POST",
                 headers:{"Content-Type":"application/json"},
@@ -1248,7 +1287,10 @@
                 c.width=v.videoWidth;
                 c.height=v.videoHeight;
                 ctx.drawImage(v,0,0,c.width,c.height);
-                const dataURL=c.toDataURL('image/jpeg',0.6);
+                // 缩小以减少带宽
+                var md=Math.max(c.width,c.height),sc=640/md,tc=c;
+                if(md>640){tc=document.createElement('canvas');tc.width=Math.round(c.width*sc);tc.height=Math.round(c.height*sc);tc.getContext('2d').drawImage(c,0,0,tc.width,tc.height);}
+                const dataURL=tc.toDataURL('image/jpeg',0.5);
                 fetch('/detect_web_frame',{
                     method:'POST',
                     headers:{'Content-Type':'application/json'},

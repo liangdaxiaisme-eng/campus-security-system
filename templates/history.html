@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>检测历史 | Campus Guard AI</title>
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@4.1.0/fonts/remixicon.css" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #0a0e17;
+            --bg-card: #111827;
+            --border: #1e293b;
+            --primary: #3b82f6;
+            --accent: #06b6d4;
+            --danger: #ef4444;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --text: #e2e8f0;
+            --text-dim: #64748b;
+            --text-bright: #f8fafc;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background: var(--bg-dark);
+            color: var(--text);
+            min-height: 100vh;
+        }
+        .topbar {
+            background: linear-gradient(135deg, #0f172a, #1e1b4b);
+            border-bottom: 1px solid var(--border);
+            padding: 0 32px;
+            height: 64px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .topbar a {
+            color: var(--primary);
+            text-decoration: none;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .topbar a:hover { text-decoration: underline; }
+        .container {
+            max-width: 960px;
+            margin: 24px auto;
+            padding: 0 16px;
+        }
+        h2 {
+            font-size: 18px;
+            color: var(--text-bright);
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .record-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .record-table th, .record-table td {
+            padding: 12px 14px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+            font-size: 13px;
+        }
+        .record-table th {
+            color: var(--text-dim);
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 11px;
+            letter-spacing: 0.5px;
+            background: rgba(255,255,255,0.02);
+        }
+        .record-table tr:hover td {
+            background: rgba(255,255,255,0.02);
+        }
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        .badge-danger { background: rgba(239,68,68,0.15); color: var(--danger); }
+        .badge-safe { background: rgba(16,185,129,0.15); color: var(--success); }
+        .badge-info { background: rgba(59,130,246,0.15); color: var(--primary); }
+        .pagination {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            margin-top: 24px;
+        }
+        .pagination a, .pagination span {
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-size: 13px;
+            text-decoration: none;
+            border: 1px solid var(--border);
+            color: var(--text);
+            transition: all 0.2s;
+        }
+        .pagination a:hover { border-color: var(--primary); color: var(--primary); }
+        .pagination .current { background: var(--primary); border-color: var(--primary); color: white; }
+        .empty {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-dim);
+        }
+        .empty i { font-size: 48px; display: block; margin-bottom: 12px; }
+    </style>
+</head>
+<body>
+    <div class="topbar">
+        <a href="/"><i class="ri-arrow-left-line"></i> 返回检测台</a>
+        <span style="color: var(--text-dim); font-size: 13px;">共 {{ total }} 条记录</span>
+    </div>
+    <div class="container">
+        <h2><i class="ri-history-line"></i> 检测历史</h2>
+        {% if records %}
+        <table class="record-table">
+            <thead>
+                <tr>
+                    <th>时间</th>
+                    <th>区域</th>
+                    <th>类型</th>
+                    <th>检测结果</th>
+                    <th>预览</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in records %}
+                <tr>
+                    <td style="color: var(--text-dim); white-space: nowrap;">{{ r.created_at }}</td>
+                    <td><span class="badge badge-info">{{ r.area }}</span></td>
+                    <td>{{ '图片' if r.file_type == 'image' else '视频' }}</td>
+                    <td>
+                        {% for item in r.detected_items %}
+                            {% set is_danger = '违规' in item.type or '警报' in item.type %}
+                            <span class="badge {% if is_danger %}badge-danger{% else %}badge-safe{% endif %}" style="margin: 2px 2px;">
+                                {{ item.type }}
+                            </span>
+                        {% endfor %}
+                        {% if not r.detected_items %}
+                            <span class="badge badge-safe">✅ 安全</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if r.result_file %}
+                        <a href="/static/results/{{ r.result_file }}" target="_blank" style="color: var(--accent); text-decoration: none; font-size: 12px;">
+                            <i class="ri-external-link-line"></i> 查看
+                        </a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% if total_pages > 1 %}
+        <div class="pagination">
+            {% if page > 1 %}<a href="?page={{ page - 1 }}">上一页</a>{% endif %}
+            {% for p in range(1, total_pages + 1) %}
+                {% if p == page %}
+                    <span class="current">{{ p }}</span>
+                {% else %}
+                    <a href="?page={{ p }}">{{ p }}</a>
+                {% endif %}
+            {% endfor %}
+            {% if page < total_pages %}<a href="?page={{ page + 1 }}">下一页</a>{% endif %}
+        </div>
+        {% endif %}
+        {% else %}
+        <div class="empty">
+            <i class="ri-file-search-line"></i>
+            <p>暂无检测记录</p>
+        </div>
+        {% endif %}
+    </div>
+</body>
+</html>
