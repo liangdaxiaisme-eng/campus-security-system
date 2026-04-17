@@ -1107,6 +1107,11 @@
         <script>
         let liveStream=null;
         function showLiveMonitor(){
+            // 检测 HTTPS
+            if(location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+                alert('⚠️ 实时监控需要 HTTPS 访问！\n\n当前地址: ' + location.href + '\n\n请使用 https:// 开头的地址访问，\n或点击「本地摄像头」使用服务器摄像头。');
+                return;
+            }
             var uploadZone = document.getElementById('uploadZone');
             var liveContainer = document.getElementById('liveMonitorContainer');
             if(uploadZone && liveContainer) {
@@ -1130,7 +1135,9 @@
             document.getElementById("stopBtn").style.display="inline-block";
             document.getElementById("liveStatus").innerHTML="🚀 请求摄像头权限...";
             if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){
-                document.getElementById("liveStatus").innerHTML="<div style=color:#ef4444>❌ 浏览器不支持摄像头</div>";
+                document.getElementById("liveStatus").innerHTML='<div style="color:#ef4444;padding:16px;background:rgba(239,68,68,0.1);border-radius:10px;border:1px solid rgba(239,68,68,0.3);">❌ 浏览器不支持摄像头 API<br><br><b>原因：</b>当前使用 HTTP 协议访问，浏览器禁止在非安全上下文中使用摄像头。<br><br><b>解决方案：</b><br>1. 使用 https:// 开头的地址访问本系统<br>2. 如果是自签名证书，浏览器会提示"不安全"，点"高级"→"继续前往"即可<br><br>当前地址: <code style="color:#06b6d4;">'+location.href+'</code></div>';
+                document.getElementById("startBtn").style.display="inline-block";
+                document.getElementById("stopBtn").style.display="none";
                 return;
             }
             navigator.mediaDevices.getUserMedia({video:{facingMode:"environment",width:{ideal:1280}}}).then(function(s){
@@ -1191,21 +1198,18 @@
 
     <!-- 本地摄像头容器（默认隐藏，替换上传区域） -->
     <div id="localCameraContainer" style="display:none; opacity:0; transition: opacity 0.4s ease-out;">
-        <h2 style="margin:0 0 15px;">📷 本地摄像头</h2>
-        <div style="margin-bottom:10px;">
-            <button type="button" onclick="switchCamera()" class="action-btn" style="background:#6b7280;padding:10px 16px;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px;">🔄 切换摄像头</button>
-        </div>
+        <h2 style="margin:0 0 15px;">📷 本地摄像头（服务器端）</h2>
         <div id="localStatus" style="margin:10px 0;"></div>
         <div style="display:flex;justify-content:center;">
-            <img id="localResult" style="width:100%;max-width:600px;display:none;">
+            <img id="localResult" style="width:100%;max-width:600px;display:none;border-radius:10px;border:1px solid var(--border);">
         </div>
-        <video id="localVideo" autoplay playsinline style="display:none;"></video>
-        <canvas id="localCanvas" style="display:none;"></canvas>
+        <div style="margin-top:12px;">
+            <button type="button" onclick="stopMjpegStream()" class="action-btn" style="background:#6b7280;padding:10px 16px;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px;">⏹ 停止监控</button>
+            <p style="font-size:12px;color:var(--text-dim);margin-top:8px;">💡 此模式使用服务器端摄像头（MJPEG 流），无需 HTTPS。如需使用您自己设备的摄像头，请点击「实时监控」。</p>
+        </div>
         <script>
         let localStream=null;
-        let currentCameraId=0;
-        let cameras=[];
-        
+
         function showLocalCamera(){
             var uploadZone = document.getElementById('uploadZone');
             var localContainer = document.getElementById('localCameraContainer');
@@ -1216,96 +1220,39 @@
                 localContainer.style.display = 'block';
                 setTimeout(function() {
                     localContainer.style.opacity = '1';
-                    startLocalCam();
+                    // 直接使用 MJPEG 流（服务器端摄像头，不需要 HTTPS）
+                    startMjpegStream();
                 }, 50);
             }
         }
-        
-        async function getCameras(){
-            if(cameras.length===0){
-                try{
-                    const devices=await navigator.mediaDevices.enumerateDevices();
-                    cameras=devices.filter(d=>d.kind==='videoinput');
-                }catch(e){
-                    console.log('无法获取摄像头列表',e);
-                }
-            }
-            return cameras;
-        }
-        
-        async function startLocalCam(){
-            const status=document.getElementById('localStatus');
-            const cams=await getCameras();
-            if(cams.length===0){
-                status.innerHTML="<div style=color:#ef4444>❌ 未找到摄像头</div>";
-                return;
-            }
-            status.innerHTML="🚀 正在启动摄像头...";
-            
-            const constraints={
-                video: cams[currentCameraId] ? {deviceId: cams[currentCameraId].deviceId} : {facingMode:"environment"}
-            };
-            
-            if(localStream){
-                localStream.getTracks().forEach(t=>t.stop());
-            }
-            
-            try{
-                localStream=await navigator.mediaDevices.getUserMedia(constraints);
-                var lv=document.getElementById('localVideo');
-                lv.srcObject=localStream;
-                lv.play();
-                status.innerHTML="<div style=color:#10b981>✅ 摄像头已启动 (摄像头 "+(currentCameraId+1)+"/"+cams.length+")</div>";
-                processLocalFrame();
-            }catch(e){
-                status.innerHTML="<div style=color:#ef4444>❌ 错误: "+e.message+"</div>";
-            }
-        }
-        
-        async function switchCamera(){
-            const cams=await getCameras();
-            if(cams.length<=1){
-                alert('只有一个摄像头，无法切换');
-                return;
-            }
-            currentCameraId=(currentCameraId+1)%cams.length;
-            startLocalCam();
-        }
-        
-        function processLocalFrame(){
-            if(!localStream||localStream.getTracks().length===0) return;
-            const v=document.getElementById('localVideo');
-            const c=document.getElementById('localCanvas');
-            const ctx=c.getContext('2d');
 
-            function capture(){
-                if(!localStream||localStream.getTracks().length===0) return;
-                if(v.readyState!==4){
-                    requestAnimationFrame(capture);
-                    return;
-                }
-                c.width=v.videoWidth;
-                c.height=v.videoHeight;
-                ctx.drawImage(v,0,0,c.width,c.height);
-                // 缩小以减少带宽
-                var md=Math.max(c.width,c.height),sc=640/md,tc=c;
-                if(md>640){tc=document.createElement('canvas');tc.width=Math.round(c.width*sc);tc.height=Math.round(c.height*sc);tc.getContext('2d').drawImage(c,0,0,tc.width,tc.height);}
-                const dataURL=tc.toDataURL('image/jpeg',0.5);
-                fetch('/detect_web_frame',{
-                    method:'POST',
-                    headers:{'Content-Type':'application/json'},
-                    body:JSON.stringify({image:dataURL,areas:"playground"})
-                }).then(r=>r.json()).then(data=>{
-                    if(data.image){
-                        document.getElementById('localResult').src=data.image;
-                        document.getElementById('localResult').style.display='block';
-                    }
-                    setTimeout(capture, 100);
-                }).catch(()=>{
-                    setTimeout(capture, 500);
-                });
-            }
-            capture();
+        // MJPEG 模式：服务器端摄像头，通过 /video_feed 推送
+        function startMjpegStream(){
+            const status = document.getElementById('localStatus');
+            const area = document.querySelector('select[name="area"]').value || 'playground';
+            status.innerHTML = '<div style="color:#10b981;">🚀 正在连接服务器摄像头...</div>';
+
+            // 创建 MJPEG img 元素
+            var resultImg = document.getElementById('localResult');
+            resultImg.src = '/video_feed?areas=' + area;
+            resultImg.style.display = 'block';
+            resultImg.onerror = function() {
+                status.innerHTML = '<div style="color:#ef4444;padding:16px;background:rgba(239,68,68,0.1);border-radius:10px;border:1px solid rgba(239,68,68,0.3);">❌ 无法连接服务器摄像头<br><br>可能原因：<br>• 服务器没有摄像头设备<br>• 摄像头被其他程序占用<br>• 服务器端口未开放</div>';
+            };
+            resultImg.onload = function() {
+                status.innerHTML = '<div style="color:#10b981;">✅ 服务器摄像头已连接（MJPEG 实时流）</div>';
+            };
+        }
+
+        function stopMjpegStream(){
+            var resultImg = document.getElementById('localResult');
+            resultImg.src = '';
+            resultImg.style.display = 'none';
+            document.getElementById('localStatus').innerHTML = '<div style="color:var(--text-dim);">已停止</div>';
+            // 恢复上传区域
+            document.getElementById('localCameraContainer').style.display = 'none';
+            var uz = document.getElementById('uploadZone');
+            if(uz) uz.style.display = '';
         }
         </script>
     </div>

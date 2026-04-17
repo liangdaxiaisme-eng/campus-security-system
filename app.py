@@ -399,9 +399,26 @@ def detect_web_frame():
 # ================= 启动 =================
 if __name__ == '__main__':
     ssl_cert, ssl_key = 'cert.pem', 'key.pem'
-    if os.path.exists(ssl_cert) and os.path.exists(ssl_key):
-        print("检测到 SSL 证书，启用 HTTPS")
+    use_ssl = os.path.exists(ssl_cert) and os.path.exists(ssl_key)
+
+    # 没有证书时自动生成自签名证书
+    if not use_ssl:
+        try:
+            import subprocess
+            print("未找到 SSL 证书，正在自动生成自签名证书...")
+            subprocess.run([
+                'openssl', 'req', '-x509', '-newkey', 'rsa:4096', '-nodes',
+                '-out', ssl_cert, '-keyout', ssl_key, '-days', '365',
+                '-subj', '/CN=localhost'
+            ], check=True, capture_output=True)
+            use_ssl = True
+            print("✅ SSL 证书生成成功，已启用 HTTPS")
+        except Exception as e:
+            print(f"⚠️ 无法生成 SSL 证书: {e}")
+            print("摄像头功能需要 HTTPS 访问")
+
+    if use_ssl:
         app.run(host='0.0.0.0', port=5000, ssl_context=(ssl_cert, ssl_key))
     else:
-        print("未检测到 SSL 证书，使用 HTTP（摄像头推流功能需 HTTPS）")
+        print("使用 HTTP 模式（摄像头推流功能不可用）")
         app.run(host='0.0.0.0', port=5000)
