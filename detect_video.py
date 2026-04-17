@@ -1,5 +1,5 @@
 """
-校园智能安全管理系统 - 视频检测脚本
+校园智能安全管理系统 - YOLOv11 视频检测脚本
 用法：python3 detect_video.py 输入视频.mp4 输出结果.mp4
 """
 from ultralytics import YOLO

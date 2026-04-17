@@ -1,6 +1,4 @@
-ultralytics>=8.0.0
-roboflow
+ultralytics>=8.3.0
 opencv-python
-pyyaml
 numpy
 flask

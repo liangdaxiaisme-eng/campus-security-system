@@ -118,20 +118,22 @@
 
         /* ========== 统计卡片 ========== */
         .stats-row {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 16px;
-            padding: 16px 32px;
+            display: flex;
+            gap: 12px;
+            padding: 12px 32px;
+            overflow-x: auto;
         }
 
         .stat-card {
             background: var(--bg-card);
             border: 1px solid var(--border);
             border-radius: 12px;
-            padding: 16px 20px;
+            padding: 14px 18px;
             position: relative;
             overflow: hidden;
             transition: all 0.3s;
+            flex: 1;
+            min-width: 160px;
         }
 
         .stat-card:hover {
@@ -186,21 +188,21 @@
         /* ========== 主内容区 ========== */
         .main-content {
             display: grid;
-            grid-template-columns: 1fr 320px;
-            gap: 16px;
-            padding: 0 24px 24px;
+            grid-template-columns: 1fr 360px;
+            gap: 20px;
+            padding: 0 32px 32px;
         }
 
         /* ========== 检测面板 ========== */
         .panel {
             background: var(--bg-card);
             border: 1px solid var(--border);
-            border-radius: 14px;
+            border-radius: 16px;
             overflow: hidden;
         }
 
         .panel-header {
-            padding: 12px 16px;
+            padding: 14px 20px;
             border-bottom: 1px solid var(--border);
             display: flex;
             align-items: center;
@@ -222,7 +224,7 @@
         }
 
         .panel-body {
-            padding: 16px;
+            padding: 20px;
         }
 
         /* ========== 区域选择 ========== */
@@ -264,8 +266,8 @@
         /* ========== 上传区 ========== */
         .upload-zone {
             border: 2px dashed var(--border);
-            border-radius: 12px;
-            padding: 30px;
+            border-radius: 14px;
+            padding: 24px;
             text-align: center;
             transition: all 0.3s;
             cursor: pointer;
@@ -279,9 +281,9 @@
         }
 
         .upload-zone i {
-            font-size: 40px;
+            font-size: 36px;
             color: var(--primary);
-            margin-bottom: 10px;
+            margin-bottom: 8px;
             display: block;
         }
 
@@ -314,21 +316,21 @@
         .action-buttons {
             display: grid;
             grid-template-columns: 1fr 1fr 1fr;
-            gap: 10px;
-            margin-top: 16px;
+            gap: 12px;
+            margin-top: 20px;
         }
 
         .action-btn {
-            padding: 12px 14px;
+            padding: 14px 16px;
             border: none;
-            border-radius: 8px;
-            font-size: 13px;
+            border-radius: 10px;
+            font-size: 14px;
             font-weight: 600;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 6px;
+            gap: 8px;
             transition: all 0.3s;
             color: white;
         }
@@ -408,8 +410,8 @@
         .report-list {
             display: flex;
             flex-direction: column;
-            gap: 8px;
-            max-height: 400px;
+            gap: 10px;
+            max-height: 500px;
             overflow-y: auto;
         }
 
@@ -418,8 +420,8 @@
         .report-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
 
         .report-item {
-            padding: 12px 14px;
-            border-radius: 8px;
+            padding: 14px 16px;
+            border-radius: 10px;
             border: 1px solid var(--border);
             background: rgba(255,255,255,0.02);
             transition: all 0.2s;
@@ -570,17 +572,49 @@
         /* ========== 响应式 ========== */
         @media (max-width: 1024px) {
             .main-content { grid-template-columns: 1fr; }
-            .stats-row { grid-template-columns: repeat(2, 1fr); }
+            .stats-row { flex-wrap: wrap; }
+            .stat-card { flex: 1 1 calc(50% - 6px); min-width: 140px; }
         }
 
         @media (max-width: 640px) {
-            .stats-row { grid-template-columns: 1fr; padding: 16px; }
-            .main-content { padding: 0 16px 16px; }
+            .stats-row { padding: 12px 16px; }
+            .stat-card { flex: 1 1 100%; }
+            .main-content { padding: 0 16px 16px; gap: 12px; }
             .topbar { padding: 0 16px; }
             .action-buttons { grid-template-columns: 1fr; }
+            .panel-body { padding: 16px; }
         }
 
-        /* ========== 扫描线动画 ========== */
+        /* ========== 选择器增强 ========== */
+        select:hover {
+            border-color: var(--primary) !important;
+        }
+        select option {
+            background: var(--bg-card);
+            color: var(--text);
+            padding: 8px;
+        }
+
+        /* ========== 全局面板阴影 ========== */
+        .panel {
+            box-shadow: 0 4px 24px rgba(0,0,0,0.15);
+        }
+
+        /* ========== 结果媒体区优化 ========== */
+        .result-media {
+            border-radius: 12px;
+        }
+
+        /* ========== 平滑过渡 ========== */
+        .result-section, .report-list, .upload-zone {
+            animation: fadeIn 0.3s ease-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ========== 扫线动画 ========== */
         .scan-line {
             position: absolute;
             top: 0;
@@ -671,21 +705,20 @@
                     <i class="ri-video-upload-line"></i>
                     安防检测工作台
                 </div>
-                <span class="model-tag"><i class="ri-fire-line"></i> mAP50: 97.8%</span>
+
             </div>
             <div class="panel-body">
                 <!-- 区域选择 -->
-                <div style="margin-bottom: 10px; font-size: 13px; color: var(--text-dim);">
-                    <i class="ri-map-pin-line"></i> 部署区域选择
-                </div>
-                <div style="margin-bottom: 14px;">
-                    <label style="font-weight: bold; color: var(--text-bright); display: block; margin-bottom: 6px;">📍 请选择摄像头部署区域：</label>
-                    <select name="area" style="width: 100%; padding: 10px; font-size: 14px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-card); color: var(--text); cursor: pointer;">
-                        <option value="lab">工程实验室</option>
-                        <option value="gate">校门进出口 / 停车场</option>
-                        <option value="dorm">宿舍区域</option>
-                        <option value="corridor">教学楼走廊 / 消防通道</option>
-                        <option value="playground">操场 / 公共区域</option>
+                <div style="margin-bottom: 18px;">
+                    <label style="font-size: 13px; font-weight: 600; color: var(--text-dim); display: block; margin-bottom: 8px;">
+                        <i class="ri-map-pin-line" style="color: var(--primary);"></i> 部署区域
+                    </label>
+                    <select name="area" style="width: 100%; padding: 10px 14px; font-size: 14px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg-dark); color: var(--text); cursor: pointer; outline: none; transition: border-color 0.2s;" onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='var(--border)'">
+                        <option value="lab">🔬 工程实验室</option>
+                        <option value="gate">🚪 校门进出口 / 停车场</option>
+                        <option value="dorm">🏠 宿舍区域</option>
+                        <option value="corridor">🏫 教学楼走廊 / 消防通道</option>
+                        <option value="playground" selected>🏟️ 操场 / 公共区域</option>
                     </select>
                 </div>
 
@@ -694,8 +727,8 @@
                     {% if not live_mode %}
                     <div class="upload-zone" id="uploadZone">
                         <i class="ri-upload-cloud-2-line"></i>
-                        <h3>上传监控画面</h3>
-                        <p>支持 JPG / PNG 图片 或 MP4 / AVI 视频</p>
+                        <h3>拖拽或点击上传</h3>
+                        <p>支持 JPG / PNG / MP4 / AVI，最大 100MB</p>
                         <input type="file" name="file" accept="image/*, video/*" id="fileInput" onchange="handleFileSelect(this)">
                         <div class="file-name" id="fileName"></div>
                     </div>
@@ -713,9 +746,6 @@
                             <span>本地摄像头</span>
                         </button>
                         <button type="button" class="action-btn btn-mobile" onclick="showLiveMonitor()">
-                            <i class="ri-live-line"></i>
-                            <span>实时监控</span>
-                        </button>
                             <i class="ri-live-line"></i>
                             <span>实时监控</span>
                         </button>
@@ -817,7 +847,7 @@
 
     <!-- 底部 -->
     <div class="footer-bar">
-        Campus Guard AI · 基于 <span>YOLOv11</span> 与深度学习的智能校园安全管理系统 · 南宁理工学院
+        Campus Guard AI · <span>YOLOv11</span> 智能校园安全管理系统 · 南宁理工学院
     </div>
 
     <script>
@@ -1120,6 +1150,7 @@
         <div style="display:flex;justify-content:center;">
             <img id="localResult" style="width:100%;max-width:600px;display:none;">
         </div>
+        <video id="localVideo" autoplay playsinline style="display:none;"></video>
         <canvas id="localCanvas" style="display:none;"></canvas>
         <script>
         let localStream=null;
@@ -1172,6 +1203,9 @@
             
             try{
                 localStream=await navigator.mediaDevices.getUserMedia(constraints);
+                var lv=document.getElementById('localVideo');
+                lv.srcObject=localStream;
+                lv.play();
                 status.innerHTML="<div style=color:#10b981>✅ 摄像头已启动 (摄像头 "+(currentCameraId+1)+"/"+cams.length+")</div>";
                 processLocalFrame();
             }catch(e){
@@ -1191,15 +1225,12 @@
         
         function processLocalFrame(){
             if(!localStream||localStream.getTracks().length===0) return;
-            // 本地摄像头只显示检测结果，不显示原始视频
+            const v=document.getElementById('localVideo');
             const c=document.getElementById('localCanvas');
             const ctx=c.getContext('2d');
-            // 创建一个隐藏的视频元素来捕获帧
-            const v=document.createElement('video');
-            v.srcObject=localStream;
-            v.play();
-            
+
             function capture(){
+                if(!localStream||localStream.getTracks().length===0) return;
                 if(v.readyState!==4){
                     requestAnimationFrame(capture);
                     return;
@@ -1217,9 +1248,9 @@
                         document.getElementById('localResult').src=data.image;
                         document.getElementById('localResult').style.display='block';
                     }
-                    requestAnimationFrame(capture);
-                }).catch(e=>{
-                    requestAnimationFrame(capture);
+                    setTimeout(capture, 100);
+                }).catch(()=>{
+                    setTimeout(capture, 500);
                 });
             }
             capture();
