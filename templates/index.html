@@ -1086,7 +1086,7 @@
                         reportDiv.innerHTML = '<div class="report-safe"><i class="ri-shield-check-line"></i><p>画面安全</p></div>';
                     }
                 }
-                requestAnimationFrame(processFrame);
+                setTimeout(processFrame, 200);  // 限速 ~5fps
             })
             .catch(() => setTimeout(() => requestAnimationFrame(processFrame), 1000));
         }
@@ -1188,9 +1188,9 @@
                     document.getElementById("liveResult").src=data.image;
                     document.getElementById("liveResult").style.display="block";
                 }
-                requestAnimationFrame(processLiveFrame);
+                setTimeout(processLiveFrame, 200);  // 限速 ~5fps
             }).catch(function(){
-                requestAnimationFrame(processLiveFrame);
+                setTimeout(processLiveFrame, 500);
             });
         }
         </script>
