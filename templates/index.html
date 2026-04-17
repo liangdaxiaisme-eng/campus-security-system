@@ -1182,7 +1182,7 @@
             fetch("/detect_web_frame",{
                 method:"POST",
                 headers:{"Content-Type":"application/json"},
-                body:JSON.stringify({image:dataURL,areas:"playground"})
+                body:JSON.stringify({image:dataURL,areas:document.querySelector('select[name="area"]').value||"playground"})
             }).then(function(r){return r.json()}).then(function(data){
                 if(data.image){
                     document.getElementById("liveResult").src=data.image;

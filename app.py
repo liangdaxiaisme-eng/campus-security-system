@@ -171,7 +171,12 @@ def index():
 @app.route('/history')
 @login_required
 def history():
-    page = int(request.args.get('page', 1))
+    try:
+        page = int(request.args.get('page', 1))
+        if page < 1:
+            page = 1
+    except (ValueError, TypeError):
+        page = 1
     per_page = 20
     offset = (page - 1) * per_page
 
@@ -243,6 +248,8 @@ def detect():
         # 异步视频处理
         task_id = uuid.uuid4().hex[:12]
         video_tasks[task_id] = {'status': 'processing', 'progress': 0, 'error': None}
+        # 在线程外捕获 session 数据
+        user_id = session.get('user_id')
 
         def process_video():
             try:
@@ -250,6 +257,9 @@ def detect():
                 res_path = os.path.join(app.config['RESULT_FOLDER'], out_filename)
 
                 cap = cv2.VideoCapture(filepath)
+                if not cap.isOpened():
+                    video_tasks[task_id] = {'status': 'error', 'error': '无法打开视频文件'}
+                    return
                 width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
                 height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
                 fps = int(cap.get(cv2.CAP_PROP_FPS)) or 25
@@ -280,7 +290,14 @@ def detect():
                 out.release()
 
                 detected_items = [{'type': t, 'confidence': '动态捕获'} for t in detected_types]
-                save_detection_record(selected_area, 'video', filename, out_filename, detected_items)
+                # 使用捕获的 user_id（线程外获取）
+                conn = get_db()
+                conn.execute(
+                    "INSERT INTO detections (user_id, area, file_type, original_file, result_file, detected_items) VALUES (?, ?, ?, ?, ?, ?)",
+                    (user_id, selected_area, 'video', filename, out_filename, json.dumps(detected_items, ensure_ascii=False))
+                )
+                conn.commit()
+                conn.close()
 
                 video_tasks[task_id] = {
                     'status': 'done',
@@ -312,6 +329,16 @@ def task_status(task_id):
 # ================= 引擎1：本地摄像头 MJPEG 流 =================
 def gen_camera_frames(allowed_classes):
     cap = cv2.VideoCapture(0)
+    if not cap.isOpened():
+        # 生成错误提示帧
+        import numpy as np
+        err_frame = np.zeros((240, 320, 3), dtype=np.uint8)
+        cv2.putText(err_frame, 'No Camera', (80, 120), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+        ret, buffer = cv2.imencode('.jpg', err_frame)
+        frame_bytes = buffer.tobytes()
+        yield (b'--frame\r\n'
+               b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
+        return
     try:
         while True:
             success, frame = cap.read()
@@ -324,6 +351,7 @@ def gen_camera_frames(allowed_classes):
             frame_bytes = buffer.tobytes()
             yield (b'--frame\r\n'
                    b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
+            time.sleep(0.033)  # ~30fps 限帧
     finally:
         cap.release()
 
@@ -365,6 +393,9 @@ def detect_web_frame():
     img_bytes = base64.b64decode(img_data)
     nparr = np.frombuffer(img_bytes, np.uint8)
     frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+
+    if frame is None:
+        return jsonify({'error': '图像解码失败'}), 400
 
     selected_area = data.get('areas', 'playground')
     allowed_classes = get_allowed_classes(selected_area)
