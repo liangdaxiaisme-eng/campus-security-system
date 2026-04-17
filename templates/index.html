@@ -747,7 +747,6 @@
 
                 <!-- 上传区域 -->
                 <form id="mainForm" method="POST" enctype="multipart/form-data">
-                    {% if not live_mode %}
                     <div class="upload-zone" id="uploadZone">
                         <i class="ri-upload-cloud-2-line"></i>
                         <h3>拖拽或点击上传</h3>
@@ -755,46 +754,19 @@
                         <input type="file" name="file" accept="image/*, video/*" id="fileInput" onchange="handleFileSelect(this)">
                         <div class="file-name" id="fileName"></div>
                     </div>
-                    {% endif %}
 
                     <!-- 操作按钮 -->
                     <div class="action-buttons">
-                        {% if not live_mode %}
                         <button type="button" class="action-btn btn-detect" onclick="doDetect(); return false;">
                             <i class="ri-search-eye-line"></i>
                             <span>AI 智能检测</span>
-                        </button>
-                        <button type="button" class="action-btn btn-camera" onclick="showLocalCamera()">
-                            <i class="ri-camera-line"></i>
-                            <span>本地摄像头</span>
                         </button>
                         <button type="button" class="action-btn btn-mobile" onclick="showLiveMonitor()">
                             <i class="ri-live-line"></i>
                             <span>实时监控</span>
                         </button>
-                        {% else %}
-                        <button type="button" class="action-btn btn-camera" style="grid-column: 1 / -1;" onclick="window.location.href='/'">
-                            <i class="ri-stop-circle-line"></i>
-                            <span>停止监控</span>
-                        </button>
-                        {% endif %}
                     </div>
                 </form>
-
-                <!-- 实时监控画面（替换上传区域） -->
-                {% if live_mode %}
-                <div class="result-media" style="margin-top: 20px; position: relative;">
-                    <div class="live-badge">LIVE</div>
-                    <div class="scan-line active"></div>
-                    {% if engine == 'local' %}
-                    <img src="{{ url_for('video_feed', areas=areas_str) }}" style="width:100%;">
-                    {% elif engine == 'web' %}
-                    <video id="webVideo" autoplay playsinline ></video>
-                    <canvas id="webCanvas" ></canvas>
-                    <img id="webResultImg" src="" style="width:100%; min-height:480px; background:#111827; border-radius:10px;">
-                    {% endif %}
-                </div>
-                {% endif %}
 
                 <!-- AJAX 检测结果将动态插入此处 -->
             </div>
@@ -810,27 +782,13 @@
                 <span class="model-tag" id="reportStatus">待检测</span>
             </div>
             <div class="panel-body">
-                {% if live_mode %}
-                <div class="report-list" id="dynamicReport">
-                    <div class="report-item">
-                        <div class="report-item-header">
-                            <div class="report-item-type">
-                                <i class="ri-loader-4-line" style="animation: spin 1s linear infinite;"></i>
-                                实时分析中
-                            </div>
-                        </div>
-                        <div style="font-size: 13px; color: var(--text-dim); margin-top: 6px;">正在解析视频流数据...</div>
-                    </div>
-                </div>
-                {% else %}
                 <div class="report-list" id="reportPanel">
                     <div class="empty-state">
                         <i class="ri-search-eye-line"></i>
                         <h3>等待检测任务</h3>
-                        <p>上传图片或开启摄像头开始检测</p>
+                        <p>上传图片开始检测</p>
                     </div>
                 </div>
-                {% endif %}
             </div>
         </div>
     </div>
@@ -998,99 +956,6 @@
         document.getElementById('normalCount').textContent = '8';
         document.getElementById('warningCount').textContent = '0';
 
-        // WebRTC 实时推流
-        {% if live_mode and engine == 'web' %}
-        const video = document.getElementById('webVideo');
-        const canvas = document.getElementById('webCanvas');
-        const ctx = canvas.getContext('2d');
-        const resultImg = document.getElementById('webResultImg');
-        const reportDiv = document.getElementById('dynamicReport');
-        const areasStr = "{{ areas_str }}";
-
-        // 检查安全上下文
-        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-            reportDiv.innerHTML = '<div class="report-item danger"><div class="report-item-header"><div class="report-item-type"><i class="ri-error-warning-line"></i> 浏览器不支持</div></div><div style="font-size:13px;color:var(--text-dim);margin-top:8px;">请使用 HTTPS 地址访问：<br><b style="color:var(--accent);">https://' + location.hostname + ':5000</b><br><br>如果提示证书不安全，请点「高级」→「继续前往」。</div></div>';
-        } else {
-            reportDiv.innerHTML = '<div class="report-item"><div class="report-item-header"><div class="report-item-type"><i class="ri-loader-4-line" style="animation:spin 1s linear infinite;"></i> 正在请求摄像头权限...</div></div></div>';
-
-            navigator.mediaDevices.getUserMedia({
-                video: { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 720 } }
-            })
-            .then(stream => {
-                video.srcObject = stream;
-                video.onloadedmetadata = () => {
-                    video.play();
-                    canvas.width = video.videoWidth;
-                    canvas.height = video.videoHeight;
-                    resultImg.style.minHeight = 'auto';
-                    reportDiv.innerHTML = '<div class="report-item"><div class="report-item-header"><div class="report-item-type"><i class="ri-loader-4-line" style="animation:spin 1s linear infinite;"></i> 实时分析中</div></div><div style="font-size:13px;color:var(--text-dim);margin-top:6px;">正在解析视频流...</div></div>';
-                    requestAnimationFrame(processFrame);
-                };
-            })
-            .catch(err => {
-                let msg = '';
-                if (err.name === 'NotAllowedError') {
-                    msg = '摄像头权限被拒绝，请在浏览器设置中允许摄像头访问。';
-                } else if (err.name === 'NotFoundError') {
-                    msg = '未检测到摄像头设备。';
-                } else if (err.name === 'NotReadableError') {
-                    msg = '摄像头被其他程序占用。';
-                } else {
-                    msg = '错误：' + err.message;
-                }
-                reportDiv.innerHTML = '<div class="report-item danger"><div class="report-item-header"><div class="report-item-type"><i class="ri-error-warning-line"></i> 摄像头启动失败</div></div><div style="font-size:13px;color:var(--text-dim);margin-top:8px;">' + msg + '<br><br>请确保使用 <b style="color:var(--accent);">https://</b> 访问。</div></div>';
-            });
-        }
-
-        function processFrame() {
-            if (video.paused || video.ended) return;
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-            // 缩小到 640px 以减少带宽
-            const maxDim = Math.max(canvas.width, canvas.height);
-            let sendCanvas = canvas;
-            if (maxDim > 640) {
-                const scale = 640 / maxDim;
-                const tmpCanvas = document.createElement('canvas');
-                tmpCanvas.width = Math.round(canvas.width * scale);
-                tmpCanvas.height = Math.round(canvas.height * scale);
-                tmpCanvas.getContext('2d').drawImage(canvas, 0, 0, tmpCanvas.width, tmpCanvas.height);
-                sendCanvas = tmpCanvas;
-            }
-            const dataURL = sendCanvas.toDataURL('image/jpeg', 0.5);
-            fetch('/detect_web_frame', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ image: dataURL, areas: areasStr })
-            })
-            .then(r => r.json())
-            .then(data => {
-                if (data.image) {
-                    resultImg.src = data.image;
-                    if (data.items && data.items.length > 0) {
-                        let html = '';
-                        data.items.forEach(item => {
-                            let danger = item.type.includes('违规') || item.type.includes('警报') || item.type.includes('缺失');
-                            html += `<div class="report-item ${danger ? 'danger' : ''}">
-                                <div class="report-item-header">
-                                    <div class="report-item-type">
-                                        <i class="${danger ? 'ri-error-warning-line' : 'ri-checkbox-circle-line'}"></i>
-                                        ${item.type}
-                                    </div>
-                                    <span class="report-item-conf">动态锁定</span>
-                                </div>
-                                <div class="report-item-bar"><div class="report-item-bar-fill" style="width:${danger ? '95' : '75'}%;"></div></div>
-                            </div>`;
-                        });
-                        reportDiv.innerHTML = html;
-                    } else {
-                        reportDiv.innerHTML = '<div class="report-safe"><i class="ri-shield-check-line"></i><p>画面安全</p></div>';
-                    }
-                }
-                setTimeout(processFrame, 200);  // 限速 ~5fps
-            })
-            .catch(() => setTimeout(() => requestAnimationFrame(processFrame), 1000));
-        }
-        {% endif %}
     </script>
 
     <!-- 实时监控容器（默认隐藏，替换上传区域） -->
@@ -1107,25 +972,19 @@
         <script>
         let liveStream=null;
         function showLiveMonitor(){
-            // 检测 HTTPS
             if(location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
-                alert('⚠️ 实时监控需要 HTTPS 访问！\n\n当前地址: ' + location.href + '\n\n请使用 https:// 开头的地址访问，\n或点击「本地摄像头」使用服务器摄像头。');
+                alert('⚠️ 实时监控需要 HTTPS 访问！\n\n当前地址: ' + location.href + '\n\n请使用 https:// 开头的地址访问。');
                 return;
             }
             var uploadZone = document.getElementById('uploadZone');
             var liveContainer = document.getElementById('liveMonitorContainer');
             if(uploadZone && liveContainer) {
-                // 获取上传区域的位置信息
                 var parent = uploadZone.parentNode;
-                // 在上传区域位置插入监控容器
                 parent.insertBefore(liveContainer, uploadZone);
-                // 隐藏上传区域，显示监控容器
                 uploadZone.style.display = 'none';
                 liveContainer.style.display = 'block';
-                // 淡入动画
                 setTimeout(function() {
                     liveContainer.style.opacity = '1';
-                    // 自动启动摄像头
                     startLiveCam();
                 }, 50);
             }
@@ -1175,7 +1034,6 @@
             c.height=v.videoHeight;
             var cx=c.getContext("2d");
             cx.drawImage(v,0,0,c.width,c.height);
-            // 缩小以减少带宽
             var md=Math.max(c.width,c.height),sc=640/md,tc=c;
             if(md>640){tc=document.createElement("canvas");tc.width=Math.round(c.width*sc);tc.height=Math.round(c.height*sc);tc.getContext("2d").drawImage(c,0,0,tc.width,tc.height);}
             var dataURL=tc.toDataURL("image/jpeg",0.5);
@@ -1188,7 +1046,7 @@
                     document.getElementById("liveResult").src=data.image;
                     document.getElementById("liveResult").style.display="block";
                 }
-                setTimeout(processLiveFrame, 200);  // 限速 ~5fps
+                setTimeout(processLiveFrame, 200);
             }).catch(function(){
                 setTimeout(processLiveFrame, 500);
             });
@@ -1196,65 +1054,6 @@
         </script>
     </div>
 
-    <!-- 本地摄像头容器（默认隐藏，替换上传区域） -->
-    <div id="localCameraContainer" style="display:none; opacity:0; transition: opacity 0.4s ease-out;">
-        <h2 style="margin:0 0 15px;">📷 本地摄像头（服务器端）</h2>
-        <div id="localStatus" style="margin:10px 0;"></div>
-        <div style="display:flex;justify-content:center;">
-            <img id="localResult" style="width:100%;max-width:600px;display:none;border-radius:10px;border:1px solid var(--border);">
-        </div>
-        <div style="margin-top:12px;">
-            <button type="button" onclick="stopMjpegStream()" class="action-btn" style="background:#6b7280;padding:10px 16px;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px;">⏹ 停止监控</button>
-            <p style="font-size:12px;color:var(--text-dim);margin-top:8px;">💡 此模式使用服务器端摄像头（MJPEG 流），无需 HTTPS。如需使用您自己设备的摄像头，请点击「实时监控」。</p>
-        </div>
-        <script>
-        let localStream=null;
 
-        function showLocalCamera(){
-            var uploadZone = document.getElementById('uploadZone');
-            var localContainer = document.getElementById('localCameraContainer');
-            if(uploadZone && localContainer) {
-                var parent = uploadZone.parentNode;
-                parent.insertBefore(localContainer, uploadZone);
-                uploadZone.style.display = 'none';
-                localContainer.style.display = 'block';
-                setTimeout(function() {
-                    localContainer.style.opacity = '1';
-                    // 直接使用 MJPEG 流（服务器端摄像头，不需要 HTTPS）
-                    startMjpegStream();
-                }, 50);
-            }
-        }
-
-        // MJPEG 模式：服务器端摄像头，通过 /video_feed 推送
-        function startMjpegStream(){
-            const status = document.getElementById('localStatus');
-            const area = document.querySelector('select[name="area"]').value || 'playground';
-            status.innerHTML = '<div style="color:#10b981;">🚀 正在连接服务器摄像头...</div>';
-
-            // 创建 MJPEG img 元素
-            var resultImg = document.getElementById('localResult');
-            resultImg.src = '/video_feed?areas=' + area;
-            resultImg.style.display = 'block';
-            resultImg.onerror = function() {
-                status.innerHTML = '<div style="color:#ef4444;padding:16px;background:rgba(239,68,68,0.1);border-radius:10px;border:1px solid rgba(239,68,68,0.3);">❌ 无法连接服务器摄像头<br><br>可能原因：<br>• 服务器没有摄像头设备<br>• 摄像头被其他程序占用<br>• 服务器端口未开放</div>';
-            };
-            resultImg.onload = function() {
-                status.innerHTML = '<div style="color:#10b981;">✅ 服务器摄像头已连接（MJPEG 实时流）</div>';
-            };
-        }
-
-        function stopMjpegStream(){
-            var resultImg = document.getElementById('localResult');
-            resultImg.src = '';
-            resultImg.style.display = 'none';
-            document.getElementById('localStatus').innerHTML = '<div style="color:var(--text-dim);">已停止</div>';
-            // 恢复上传区域
-            document.getElementById('localCameraContainer').style.display = 'none';
-            var uz = document.getElementById('uploadZone');
-            if(uz) uz.style.display = '';
-        }
-        </script>
-    </div>
 </body>
 </html>
