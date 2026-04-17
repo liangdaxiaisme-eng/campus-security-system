@@ -913,17 +913,27 @@
                 }
                 
                 // 更新右侧检测报告
-                const reportList = document.querySelector('.report-list');
-                if (reportList && reportItems.length > 0) {
-                    let reportHtml = '';
-                    reportItems.forEach(item => {
-                        reportHtml += item.outerHTML;
-                    });
-                    reportList.innerHTML = reportHtml;
-                    document.getElementById('reportStatus').innerHTML = '<span style="color:var(--success);">已完成</span>';
-                } else {
-                    reportList.innerHTML = '<div class="report-safe"><i class="ri-shield-check-line"></i><p>画面安全，未检测到异常目标</p></div>';
-                    document.getElementById('reportStatus').innerHTML = '<span style="color:var(--success);">安全</span>';
+                var reportList = document.querySelector('.report-list');
+                // 如果不存在 report-list 容器，找到 report 面板的 body 创建一个
+                if (!reportList) {
+                    var panelBody = document.querySelectorAll('.panel .panel-body')[1];
+                    if (panelBody) {
+                        panelBody.innerHTML = '<div class="report-list"></div>';
+                        reportList = panelBody.querySelector('.report-list');
+                    }
+                }
+                if (reportList) {
+                    if (reportItems.length > 0) {
+                        let reportHtml = '';
+                        reportItems.forEach(item => {
+                            reportHtml += item.outerHTML;
+                        });
+                        reportList.innerHTML = reportHtml;
+                        document.getElementById('reportStatus').innerHTML = '<span style="color:var(--success);">已完成</span>';
+                    } else {
+                        reportList.innerHTML = '<div class="report-safe"><i class="ri-shield-check-line"></i><p>画面安全，未检测到异常目标</p></div>';
+                        document.getElementById('reportStatus').innerHTML = '<span style="color:var(--success);">安全</span>';
+                    }
                 }
             }).catch(e => {
                 uploadZone.innerHTML = '<div style="padding:20px;text-align:center;color:var(--danger);">错误: ' + e.message + '</div>';
